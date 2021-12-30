@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><meta charset="utf-8"><meta name="generator" content="Hugo 0.70.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark"><title>编译自己的Chromium (win10)&nbsp;&ndash;&nbsp;松松的Blog</title><link rel="stylesheet" href="/css/core.min.1cd1345e6da65a9cce6da75addf1a057905f1550962205dfd43f9c0d90a2c0aaef84b52c7745803cfdf425ca7d266640.css" integrity="sha384-HNE0Xm2mWpzObada3fGgV5BfFVCWIgXf1D&#43;cDZCiwKrvhLUsd0WAPP30Jcp9JmZA"><meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="编译自己的Chromium (win10)" /><body><section id="header">
+    <div class="header wrap"><span class="header left-side"><a class="site home" href="/"><span class="site name">松松的Blog</span></a></span>
+        <span class="header right-side"><div class="nav wrap"><nav class="nav"><a class="nav item" href="/categories/">Categories</a><a class="nav item" href="/tags/">Tags</a></nav></div></span></div><div class="site slogan"><span class="title">Do Not Go Gentle Into That Good Night</span></div></section><section id="content"><div class="article-container"><section class="article header">
+    <h1 class="article title">编译自己的Chromium (win10)</h1><p class="article date">2021-12-28</p></section><article class="article markdown-body"><p>自己动手编译Chromium浏览器</p>
+<h1 id="背景">背景</h1>
+<p>Chrome与Chromium和Android与AOSP一样。Chromium + Google Chrome SDK = Chrome, AOSP + Google Mobile Services = Android。</p>
+<h2 id="硬件要求">硬件要求</h2>
+<p>Chromium开发比起Android开发不要太好。Chromium本身可以看作是一个C++写成的binary，是一个组件稍微有点多的application，所以整个编译流程走的是比较传统的compile+link，每次改动只影响到几个.o，所以大部分时间其实都花在第一次编译上了，之后改了代码以后的增量编译非常快。（Android就是噩梦了，这里按下不表）</p>
+<p>所以一个5800x这类的CPU就能很愉快的玩耍了。内存的话不管编译啥都比较吃内存，16G起步，不然降速比较明显。硬盘这年头没人用机械盘了吧，要留够100G空间。</p>
+<h1 id="环境设置">环境设置</h1>
+<p>具体一定要参照官方指南：<a href="https://chromium.googlesource.com/chromium/src/&#43;/refs/heads/main/docs/windows_build_instructions.md"target="_blank">这里</a>，以下为简介。</p>
+<h2 id="visual-studio">Visual Studio</h2>
+<p>Chromium repo是一个巨大的git repo，然后外带一个工具来sync其他的pre-built binary，叫<code>gclient</code>。Chromium有一套自己的git command wrapper，用起来是比较方便的。</p>
+<p>首先我们需要装VS2019，虽然现在2022已经出了一段时间了但是Chromium还是没升级到这个新的上面，大概率还要等几个月。</p>
+<p>去<a href="https://visualstudio.microsoft.com/zh-hans/downloads/"target="_blank">官网</a>选社区Community版本就足够了。下载下来是一个下载器，注意这里不要直接安装（因为默认是安装2022版），先取消然后自己选2019，环境是C++开发，然后还要附带上几个组件<strong>Desktop development with C++</strong>，<strong>MFC/ATL support</strong>与至少<strong>Win10 SDK 10.0.19041</strong>起步的sdk。</p>
+<p>等安装完成了还要装一个Win 10 SDK Debugging tool，不然也过不了编译。打开VS之后Control Panel → Programs → Programs and Features → Select the “Windows Software Development Kit” → Change → Change → Check “Debugging Tools For Windows” → Change</p>
+<h2 id="depot_tools">depot_tools</h2>
+<p>这个就是chromium用的git wrapper。参照指南，下载<a href="https://storage.googleapis.com/chrome-infra/depot_tools.zip"target="_blank">zip</a>，然后整体解压，因为这个也是个git repo，一定要把.git文件夹带上。然后打开环境变量，把目录加到<strong>第一条</strong>PATH里面（优先级需要最高，因为要保证git和python命令都能调用到这里面）。还需要加一个<strong>DEPOT_TOOLS_WIN_TOOLCHAIN</strong>环境变量并设置成0。还需要加一个<strong>vs2019_install</strong>指向VS的安装目录（我的目录是<code>C:\Program Files (x86)\Microsoft Visual Studio\2019\Community</code>）</p>
+<h2 id="测试">测试</h2>
+<p><code>$ gclient</code> 应该是没问题的</p>
+<p><code>where python</code> 应该是指向上述tool目录里的python的</p>
+<h1 id="clone">Clone</h1>
+<p>对我们来说可选，毕竟不打算向官方交代码，无所谓了。</p>
+<pre><code>$ git config --global user.name &quot;My Name&quot;
+$ git config --global user.email &quot;my-name@chromium.org&quot;
+$ git config --global core.autocrlf false
+$ git config --global core.filemode false
+$ git config --global branch.autosetuprebase always
+</code></pre><p>新建文件夹chromium，然后执行<code>fetch chromium --no-history</code>开始拉代码（加no-history可以少拉下来很多东西，毕竟我们不需要本地开倒车）。</p>
+<p>然后就是漫长的等待。</p>
+<p>结束以后代码都在<code>src</code>文件夹里。</p>
+<h1 id="build">Build</h1>
+<p><code>gn gen out/Default</code>是生成build配置到out/Default目录内，目录内的args.gn就是编译配置文件，默认应该是空的。然后<code>autoninja -C out\Default chrome</code>编译就行了。大概等一个多小时（或者几个小时，取决于CPU）就完成了，out/Default下面就有chrome.exe了。</p>
+<p>然后会发现这个浏览器巨慢。因为这个是debug编译，我们还需要一个release版。</p>
+<p><code>gn gen out/release</code>生成一个新的配置，进args.gn加上如下的配置来生成release build。</p>
+<pre><code>chrome_pgo_phase = 0
+is_official_build = true
+</code></pre><p>然后<code>autoninja -C out\release chrome</code>就会在out/release下编译一个正常的版本。</p>
+<p>PS: 平时开发建议用debug版本，虽然卡但是增量编译会快一些</p>
+<h1 id="h264-support">H264 support</h1>
+<p>H264这个比较敏感。Chrome的H264解码用的是Google自己的闭源库（因为开源协议），Chromium默认编译不带解码库，开编译选项以后可以带上ffmpeg解码。</p>
+<p>在args.gn里加上如下开关</p>
+<pre><code>proprietary_codecs = true
+rtc_initialize_ffmpeg = true
+rtc_use_h264 = true
+use_openh264 = true
+ffmpeg_branding = &quot;Chrome&quot;
+</code></pre><p>Enjoy!</p></article><section class="article labels"><a class="tag" href=/tags/chromium/>chromium</a></section></div>
+<div class="article bottom"><section class="article navigation"><p><a class="link" href="/posts/coreelec-addon-proxy-setting/"><span class="li iconfont icon-article"></span>CoreELEC中Google Drive插件不全局代理的解决方法</a></p></section></div></section><section id="footer"><div class="footer-wrap">
+    <p class="copyright">2020 Song.</p>
+    <p class="powerby"><span>Powered by </span><a href="https://gohugo.io" 
+        target="_blank">Hugo</a><span> and the </span><a href="https://themes.gohugo.io/hugo-notepadium/" 
+        target="_blank">Notepadium</a></p>
+</div></section><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/&#43;DiW/UqRcLbRjq" crossorigin="anonymous"><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l&#43;B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd&#43;qj&#43;o24G5ZU2zJz" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body);"></script><script src="/js/hljs.min.0799348a91dce12c6be4a73f943cfe78f181f4e6f6ec35c4af0fca1de377879f77cfab03c30f03a174d675737b5a9314.js" integrity="sha384-B5k0ipHc4Sxr5Kc/lDz&#43;ePGB9Ob27DXErw/KHeN3h593z6sDww8DoXTWdXN7WpMU"></script><script>hljs.initHighlightingOnLoad();</script>
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-167241500-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+</body>
+
+</html>

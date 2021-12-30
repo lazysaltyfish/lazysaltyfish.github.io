@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>chromium on 松松的Blog</title>
+    <link>/tags/chromium/</link>
+    <description>Recent content in chromium on 松松的Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <copyright>2020 Song.</copyright>
+    <lastBuildDate>Tue, 28 Dec 2021 10:00:00 +0800</lastBuildDate>
+    
+        <atom:link href="/tags/chromium/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>编译自己的Chromium (win10)</title>
+      <link>/posts/chromium-build-win/</link>
+      <pubDate>Tue, 28 Dec 2021 10:00:00 +0800</pubDate>
+      
+      <guid>/posts/chromium-build-win/</guid>
+      <description>&lt;p&gt;自己动手编译Chromium浏览器&lt;/p&gt;</description>
+      
+    </item>
+    
+  </channel>
+</rss>
